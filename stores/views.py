@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Employee, Store
-from .serializers import EmployeeSerializer, StoreSerializer
+from .serializers import (AuthEmployeeSerializer, EmployeeSerializer,
+                          StoreSerializer)
 
 
 # Create your views here.
@@ -51,6 +52,26 @@ class AuthEmployeeView(APIView):
         employee = Employee.objects.get(user=user)
         serializer = EmployeeSerializer(employee)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        user = request.user
+
+        if Employee.objects.filter(user=user):
+            authuser = True
+        else:
+            authuser = False
+
+        if authuser == False:
+            serilalzer = AuthEmployeeSerializer(data=request.data)
+
+            if serilalzer.is_valid():
+                serilalzer.save(user=user)
+                return Response(serilalzer.data, status=status.HTTP_201_CREATED)
+            return Response(serilalzer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"message": "너 이미 직장 있잖아!"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class EmployeeDetailView(APIView):
